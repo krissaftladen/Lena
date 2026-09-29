@@ -1,1 +1,937 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Lena – Digitales Haustier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#fdf6ef;
+    --pink:#ffd6e8;
+    --pink-deep:#ff9ec4;
+    --pastel-lav:#e3d9f7;
+    --pastel-mint:#d6f5e3;
+    --ink:#5b4a52;
+    --shadow: rgba(91,74,82,0.18);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background: var(--cream);
+    font-family: "Press Start 2P", monospace;
+    color: var(--ink);
+    overscroll-behavior: none;
+    user-select:none;
+    image-rendering: pixelated;
+  }
+  img{ image-rendering: pixelated; }
+  #app{
+    position:relative;
+    width:100vw;
+    height:100vh;
+    height:100dvh;
+    overflow:hidden;
+  }
 
+  /* ---------- Background layer ---------- */
+  #bg{
+    position:absolute; inset:0;
+    transition: background 0.6s ease;
+    image-rendering: pixelated;
+  }
+  #bg .deco{
+    position:absolute;
+    font-size:28px;
+    opacity:0.9;
+    filter: drop-shadow(0 2px 0 var(--shadow));
+  }
+
+  /* ---------- Top bar ---------- */
+  #topbar{
+    position:absolute; top:0; left:0; right:0;
+    padding: calc(10px + env(safe-area-inset-top)) 14px 10px 14px;
+    display:flex; align-items:center; justify-content:space-between;
+    z-index:5;
+  }
+  #petname{
+    font-size:9px; letter-spacing:0.5px;
+    background: rgba(255,255,255,0.85);
+    padding:8px 12px; border-radius:0;
+    border:3px solid var(--ink);
+    box-shadow: 4px 4px 0 var(--shadow);
+  }
+  #daynight{
+    font-size:16px;
+    background: rgba(255,255,255,0.85);
+    width:36px; height:36px; border-radius:0;
+    border:3px solid var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 4px 4px 0 var(--shadow);
+  }
+
+  /* ---------- Pet stage ---------- */
+  #stage{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    pointer-events:none;
+  }
+  #doors{ position:absolute; inset:0; z-index:1; }
+  #backBtn{
+    position:absolute; left:16px; bottom:calc(84px + env(safe-area-inset-bottom)); z-index:5;
+    display:none; background:rgba(255,255,255,0.9); border:3px solid var(--ink); border-radius:0;
+    padding:12px 10px; font-size:8px; font-family:"Press Start 2P", monospace; color:var(--ink);
+    box-shadow:4px 4px 0 var(--shadow); touch-action:manipulation;
+  }
+  #backBtn:active{ transform:translate(3px,3px); box-shadow:none; }
+  .door{ position:absolute; cursor:pointer; touch-action:manipulation; }
+  #petWrap{
+    position:relative;
+    width:52vw; max-width:260px; aspect-ratio:1/1;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    pointer-events:auto;
+  }
+  #petImg{
+    width:100%; height:100%;
+    object-fit:contain;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 8px 0 var(--shadow));
+  }
+  #hatLayer{
+    position:absolute;
+    top:-10%;
+    left:50%;
+    transform: translateX(-50%);
+    width: 46%;
+    aspect-ratio: 1/1;
+    pointer-events:none;
+  }
+  #hatLayer svg{ width:100%; height:100%; display:block; }
+  #heart{
+    position:absolute;
+    font-size:26px;
+    opacity:0;
+    pointer-events:none;
+  }
+  .sleepy{ animation: sleep 3.2s ease-in-out infinite !important; opacity:0.85; }
+  @keyframes sleep{
+    0%,100%{ transform: translateY(0) rotate(-3deg); }
+    50%{ transform: translateY(1%) rotate(3deg); }
+  }
+  .bounce{ animation: bounce 0.5s ease; }
+  @keyframes bounce{
+    0%{ transform: scale(1); }
+    40%{ transform: scale(1.12) rotate(4deg); }
+    100%{ transform: scale(1); }
+  }
+  @keyframes floatUp{
+    0%{ transform: translateY(0); opacity:1; }
+    100%{ transform: translateY(-70px); opacity:0; }
+  }
+
+  /* ---------- Right side buttons ---------- */
+  #rightbar{
+    position:absolute; right:14px; top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; gap:14px;
+    z-index:5;
+  }
+  .sidebtn{
+    width:66px;
+    background: var(--pink);
+    border: 3px solid var(--ink);
+    border-radius: 0;
+    padding:10px 4px;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    box-shadow: 4px 4px 0 var(--pink-deep);
+    color: var(--ink);
+    font-size:7px;
+    font-family: "Press Start 2P", monospace;
+    transition: transform 0.12s ease;
+  }
+  .sidebtn:active{ transform: translate(3px,3px); box-shadow: 1px 1px 0 var(--pink-deep); }
+  .sidebtn .icon{ font-size:20px; }
+
+  /* ---------- Bottom bar ---------- */
+  #bottombar{
+    position:absolute; left:0; right:0; bottom:0;
+    padding: 10px 16px calc(14px + env(safe-area-inset-bottom)) 16px;
+    display:flex; gap:10px; justify-content:center;
+    z-index:5;
+  }
+  .actionbtn{
+    flex:1; max-width:150px;
+    background: rgba(255,255,255,0.9);
+    border:3px solid var(--ink); border-radius:0;
+    padding:12px 6px;
+    font-size:8px; font-family:"Press Start 2P", monospace; color:var(--ink);
+    box-shadow: 4px 4px 0 var(--shadow);
+  }
+  .actionbtn:active{ transform: translate(3px,3px); box-shadow:none; }
+
+  /* ---------- Panels (Wardrobe / Backgrounds) ---------- */
+  .panel{
+    position:absolute; left:0; right:0; bottom:0;
+    background: var(--cream);
+    border-radius: 0;
+    border-top: 4px solid var(--ink);
+    box-shadow: 0 -6px 20px rgba(0,0,0,0.15);
+    padding: 16px 16px calc(20px + env(safe-area-inset-bottom)) 16px;
+    max-height: 62vh;
+    transform: translateY(100%);
+    transition: transform 0.28s ease;
+    z-index: 20;
+    display:flex; flex-direction:column;
+  }
+  .panel.open{ transform: translateY(0); }
+  .panel h2{
+    margin:0 0 12px 0; font-size:11px; text-align:center;
+  }
+  .panel-close{
+    position:absolute; top:10px; right:14px;
+    background:none; border:none; font-size:18px; color:var(--ink); opacity:0.6;
+  }
+  .grid{
+    display:grid; grid-template-columns: repeat(4, 1fr);
+    gap:10px;
+    overflow-y:auto;
+    padding-bottom:6px;
+  }
+  .tile{
+    aspect-ratio:1/1;
+    background: white;
+    border-radius:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px;
+    border: 3px solid var(--ink);
+    position:relative;
+    overflow:hidden;
+  }
+  .tile.selected{ border-color: var(--pink-deep); background: var(--pink); box-shadow: 3px 3px 0 var(--pink-deep); }
+  .tile img{ width:70%; height:70%; object-fit:contain; image-rendering:pixelated; }
+  .tile .label{
+    position:absolute; bottom:2px; left:0; right:0;
+    font-size:6px; text-align:center; opacity:0.7;
+  }
+  .upload-tile{
+    border: 3px dashed var(--pink-deep);
+    color: var(--pink-deep);
+    font-size:18px;
+  }
+  .tile-delete{
+    width:20px; height:20px;
+    background: rgba(255,255,255,0.9);
+    border: 2px solid var(--ink);
+    border-radius:0;
+    font-size:10px;
+    line-height:1;
+    color: var(--ink);
+    padding:0;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  #overlay{
+    position:absolute; inset:0; background:rgba(0,0,0,0.25);
+    opacity:0; pointer-events:none; transition:opacity 0.28s ease;
+    z-index:15;
+  }
+  #overlay.show{ opacity:1; pointer-events:auto; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="bg"></div>
+  <div id="doors"></div>
+  <button id="backBtn">⬅ Zurück</button>
+
+  <div id="topbar">
+    <button id="settingsBtn" onclick="openPanel('backup')" style="background:rgba(255,255,255,0.85); border:3px solid var(--ink); width:36px; height:36px; border-radius:0; font-size:14px; box-shadow:4px 4px 0 var(--shadow);">⚙️</button>
+    <div id="petname">Lenas Haustier</div>
+    <div id="daynight">☀️</div>
+  </div>
+
+  <div id="stage">
+    <div id="petWrap">
+      <div id="hatLayer"></div>
+      <img id="petImg" src="" alt="Haustier">
+      <div id="heart">💕</div>
+    </div>
+  </div>
+
+  <div id="rightbar">
+    <button class="sidebtn" onclick="openPanel('wardrobe')">
+      <span class="icon">👗</span>Wardrobe
+    </button>
+    <button class="sidebtn" onclick="openPanel('backgrounds')">
+      <span class="icon">🏡</span>Backgrounds
+    </button>
+  </div>
+
+  <div id="bottombar">
+    <button class="actionbtn" onclick="feedPet()">🍪 Füttern</button>
+    <button class="actionbtn" onclick="petPet()">✋ Streicheln</button>
+  </div>
+
+  <div id="overlay" onclick="closePanels()"></div>
+
+  <!-- Wardrobe Panel -->
+  <div class="panel" id="panel-wardrobe">
+    <button class="panel-close" onclick="closePanels()">✕</button>
+    <h2>Wardrobe</h2>
+    <div style="display:flex; gap:8px; margin-bottom:10px; justify-content:center;">
+      <button class="actionbtn" style="max-width:110px; font-size:11px;" onclick="showWardrobeTab('skins')">Skins</button>
+      <button class="actionbtn" style="max-width:110px; font-size:11px;" onclick="showWardrobeTab('hats')">Hüte</button>
+    </div>
+    <div class="grid" id="wardrobe-grid"></div>
+  </div>
+
+  <!-- Backup Panel -->
+  <div class="panel" id="panel-backup">
+    <button class="panel-close" onclick="closePanels()">✕</button>
+    <h2>Backup</h2>
+    <div style="display:flex; flex-direction:column; gap:10px; align-items:center; padding:10px 0;">
+      <button class="actionbtn" style="max-width:220px;" onclick="exportBackup()">⬇️ Backup speichern</button>
+      <button class="actionbtn" style="max-width:220px;" onclick="document.getElementById('backupFileInput').click()">⬆️ Backup laden</button>
+      <button class="actionbtn" style="max-width:220px; color:#b23a3a;" onclick="deleteAllSkins()">🗑️ Alle Skins löschen</button>
+      <input type="file" id="backupFileInput" accept="application/json" style="display:none">
+    </div>
+  </div>
+
+  <!-- Backgrounds Panel -->
+  <div class="panel" id="panel-backgrounds">
+    <button class="panel-close" onclick="closePanels()">✕</button>
+    <h2>Backgrounds</h2>
+    <div class="grid" id="backgrounds-grid"></div>
+  </div>
+
+</div>
+
+<input type="file" id="fileInput" accept="image/*" style="display:none">
+
+<script>
+/* ---------------- Datenmodell ---------------- */
+const DEFAULT_STATE = {
+  skin: null,
+  hat: "none",
+  background: "kitchen",
+  customSkins: {},           // eigeneId -> {name, dataUrl}
+  customHats: {},            // eigeneId -> {name, dataUrl}
+  customBackgrounds: {},     // eigeneId -> {name, dataUrl}
+  hiddenHats: [],            // gelöschte eingebaute Hüte (per id)
+  hiddenBackgrounds: [],     // gelöschte eingebaute Hintergründe (per id)
+  hatNameOverrides: {},      // umbenannte eingebaute Hüte
+  backgroundNameOverrides: {}// umbenannte eingebaute Hintergründe
+};
+
+const SKINS = []; // keine eingebauten Skins mehr (Katze entfernt) – nur eigene, benannte Skins
+
+/* ---------------- Pixel-Art Renderer für Hüte ---------------- */
+// halfRows = linke Hälfte (wird gespiegelt) -> ergibt symmetrisches Motiv
+function mirrorRows(halfRows){
+  return halfRows.map(r => r + r.split("").reverse().join(""));
+}
+function gridRects(rows, palette, offsetX, offsetY){
+  let body = "";
+  for(let y=0;y<rows.length;y++){
+    for(let x=0;x<rows[y].length;x++){
+      const ch = rows[y][x];
+      if(ch !== "." && palette[ch]){
+        body += `<rect x="${x+offsetX}" y="${y+offsetY}" width="1" height="1" fill="${palette[ch]}"/>`;
+      }
+    }
+  }
+  return body;
+}
+function hatSVG(def){
+  const rows = mirrorRows(def.halfRows);
+  const w = rows[0].length, h = rows.length;
+  let body = gridRects(rows, def.palette, 0, 0);
+  if(def.centerGrid){
+    const cg = def.centerGrid;
+    body += gridRects(cg.rows, def.palette, cg.offsetX, cg.offsetY);
+  }
+  (def.extra||[]).forEach(e=>{
+    body += `<rect x="${e.x}" y="${e.y}" width="${e.w||1}" height="${e.h||1}" fill="${e.fill}"/>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">${body}</svg>`;
+}
+
+const HAT_ART = {
+  bow: {
+    palette:{k:"#b23a68", l:"#ffd9ec", p:"#ff9ecf", d:"#ff6fb0"},
+    halfRows:[
+      "................",
+      "........kkkk....",
+      "......kkllllkk..",
+      ".....kllllllppk.",
+      "....klllllpppppk",
+      "....klllpppppppk",
+      "....klpppppppddk",
+      "....kppppppddddk",
+      "....kppppddddddk",
+      "....kppdddddddkk",
+      ".....kdddddddk..",
+      "......kkddddkk..",
+      "........kkkk....",
+      "................"
+    ],
+    centerGrid:{
+      offsetX:12, offsetY:3,
+      rows:[
+        "...kk...",
+        "..kllk..",
+        ".kllppk.",
+        ".kppppk.",
+        ".kpppdk.",
+        ".kppddk.",
+        "..kddk..",
+        "...kk..."
+      ]
+    }
+  },
+  flower: {
+    palette:{g:"#5fae4f", p:"#ff9ec4", y:"#ffe066"},
+    halfRows:[
+      ".pp.....",
+      "pppp....",
+      ".pp.gg..",
+      "..ggggg.",
+      "..ggggg.",
+      "........"
+    ],
+    extra:[{x:7,y:0,w:2,h:2,fill:"#ffe066"}]
+  },
+  cap: {
+    palette:{b:"#6fb3e0"},
+    halfRows:[
+      "...bbb..",
+      "..bbbbb.",
+      ".bbbbbbb",
+      "bbbbbbbb",
+      "bbbbbbbb",
+      "..bbbbbb"
+    ]
+  },
+  sunhat: {
+    palette:{t:"#f2cf8e", b:"#dba85f"},
+    halfRows:[
+      "...ttt..",
+      "..ttttt.",
+      ".ttttttt",
+      "bbbbbbbb",
+      "bbbbbbbb"
+    ]
+  },
+  tophat: {
+    palette:{k:"#2b2b2b", r:"#c9424c"},
+    halfRows:[
+      "..kkkk..",
+      "..kkkk..",
+      "..kkkk..",
+      "..rrrr..",
+      "kkkkkkkk"
+    ]
+  },
+  frog: {
+    palette:{g:"#6fbf6a", w:"#f5fff2"},
+    halfRows:[
+      "wg......",
+      "gg.gggg.",
+      "..gggggg",
+      "..gggggg",
+      "..gggggg"
+    ],
+    extra:[
+      {x:0,y:0,w:1,h:1,fill:"#2b2b2b"},
+      {x:15,y:0,w:1,h:1,fill:"#2b2b2b"}
+    ]
+  },
+  crown: {
+    palette:{y:"#ffd54f"},
+    halfRows:[
+      "y.......",
+      "yy......",
+      "yyy.....",
+      "yyyy....",
+      "yyyyyyyy",
+      "yyyyyyyy"
+    ],
+    extra:[{x:7,y:4,w:2,h:2,fill:"#e5484d"}]
+  },
+  halloween: {
+    palette:{k:"#2b2b2b", o:"#ff9142"},
+    halfRows:[
+      ".......k",
+      "......kk",
+      ".....kkk",
+      "....kkkk",
+      "...kkkkk",
+      "..kkkkkk",
+      ".kkkkkkk",
+      "oooooooo"
+    ]
+  },
+  xmas: {
+    palette:{r:"#e5484d", w:"#ffffff"},
+    halfRows:[
+      ".......w",
+      "......rr",
+      ".....rrr",
+      "....rrrr",
+      "...rrrrr",
+      "wwwwwwww",
+      "wwwwwwww"
+    ]
+  }
+};
+
+const HATS = [
+  { id:"none", label:"Kein Hut" },
+  { id:"bow", label:"Schleife", art:"bow" },
+  { id:"flower", label:"Blumenkranz", art:"flower" },
+  { id:"cap", label:"Cap", art:"cap" },
+  { id:"sunhat", label:"Sonnenhut", art:"sunhat" },
+  { id:"tophat", label:"kl. Zylinder", art:"tophat" },
+  { id:"frog", label:"Froschhut", art:"frog" },
+  { id:"crown", label:"Krone", art:"crown" },
+  { id:"halloween", label:"Halloween", art:"halloween" },
+  { id:"xmas", label:"Weihnachten", art:"xmas" }
+];
+
+const BACKGROUNDS = [
+  { id:"kitchen", label:"Küche", emoji:"🍳",
+    img:"kueche.png", w:852, h:1846,
+    doors:[ { x1:775, y1:690, x2:850, y2:1200, to:"livingroom" } ],
+    day:"linear-gradient(#fff3e0,#ffe0b2)", night:"linear-gradient(#3a2f45,#5c4a63)" },
+  { id:"livingroom", label:"Wohnzimmer", emoji:"🔥",
+    img:"wohnzimmer.png", w:852, h:1846,
+    doors:[ { x1:335, y1:715, x2:525, y2:1085, to:"garden" },
+            { x1:12,  y1:670, x2:85,  y2:1095, to:"kitchen" } ],
+    day:"linear-gradient(#ffe9e0,#ffd1c1)", night:"linear-gradient(#2e2438,#4a3a52)" },
+  { id:"garden", label:"Garten", emoji:"🌷",
+    img:"garten.png", w:852, h:1846, doors:[], back:"livingroom",
+    day:"linear-gradient(#d6f5e3,#bfe8cf)", night:"linear-gradient(#1f2f3a,#33475a)" }
+];
+
+let state = loadState();
+let uploadMode = null;   // "skin" | "hat" | "background"
+let uploadTarget = null; // bei "skin": welcher Skin-Slot ersetzt wird
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem("lena_pet_state");
+    if(raw){
+      const merged = Object.assign({}, DEFAULT_STATE, JSON.parse(raw));
+
+      // kaputte/alte Skin-Einträge bereinigen (z.B. "undefined" aus altem Format)
+      Object.keys(merged.customSkins||{}).forEach(id=>{
+        const e = merged.customSkins[id];
+        if(typeof e === "string") merged.customSkins[id] = { name:"Skin", dataUrl:e };
+        else if(!e || !e.dataUrl) delete merged.customSkins[id];
+      });
+      Object.keys(merged.customHats||{}).forEach(id=>{
+        const e = merged.customHats[id];
+        if(typeof e === "string") merged.customHats[id] = { name:"Hut", dataUrl:e };
+        else if(!e || !e.dataUrl) delete merged.customHats[id];
+      });
+      Object.keys(merged.customBackgrounds||{}).forEach(id=>{
+        const e = merged.customBackgrounds[id];
+        if(typeof e === "string") merged.customBackgrounds[id] = { name:"Hintergrund", dataUrl:e };
+        else if(!e || !e.dataUrl) delete merged.customBackgrounds[id];
+      });
+      // alter "Katze"-Skin existiert nicht mehr
+      if(merged.skin === "default") merged.skin = null;
+
+      return merged;
+    }
+  }catch(e){}
+  return Object.assign({}, DEFAULT_STATE);
+}
+function saveState(){
+  localStorage.setItem("lena_pet_state", JSON.stringify(state));
+}
+
+/* ---------------- Rendering ---------------- */
+function renderPet(){
+  const img = document.getElementById("petImg");
+  const custom = state.customSkins[state.skin];
+  if(custom){
+    img.style.display = "block";
+    img.src = custom.dataUrl;
+  } else {
+    // Platzhalter, wenn (noch) kein Skin ausgewählt ist
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+      <rect x="35" y="35" width="130" height="130" rx="6" fill="#ffe9f3" stroke="#ff9ecf" stroke-width="5"/>
+      <text x="50%" y="58%" font-size="56" text-anchor="middle" dominant-baseline="middle">➕</text>
+    </svg>`;
+    img.src = "data:image/svg+xml," + encodeURIComponent(svg);
+  }
+
+  const hatLayer = document.getElementById("hatLayer");
+  const customHat = state.customHats[state.hat];
+  if(customHat){
+    hatLayer.innerHTML = `<img src="${customHat.dataUrl}" style="width:100%; height:100%; object-fit:contain;">`;
+  } else {
+    const hat = HATS.find(h=>h.id===state.hat);
+    hatLayer.innerHTML = (hat && hat.art) ? hatSVG(HAT_ART[hat.art]) : "";
+  }
+
+  renderBackground();
+  applyDayNight();
+  const nameEl = document.getElementById("petname");
+  if(nameEl) nameEl.textContent = custom ? custom.name : "Lenas Haustier";
+}
+
+function renderBackground(){
+  const el = document.getElementById("bg");
+  const customBg = state.customBackgrounds[state.background];
+  if(customBg){
+    el.style.backgroundImage = `url(${customBg.dataUrl})`;
+    el.style.backgroundSize = "cover";
+    el.style.backgroundPosition = "center";
+    renderDoors(null);
+    return;
+  }
+  const bg = BACKGROUNDS.find(b=>b.id===state.background) || BACKGROUNDS[0];
+  if(bg.img){
+    el.style.background = "";
+    el.style.backgroundImage = `url(${bg.img})`;
+    el.style.backgroundSize = "cover";
+    el.style.backgroundPosition = "center";
+    el.style.backgroundRepeat = "no-repeat";
+    renderDoors(bg);
+    return;
+  }
+  el.style.backgroundImage = "none";
+  const isNight = !isDayTime();
+  el.style.background = isNight ? bg.night : bg.day;
+  renderDoors(null);
+}
+
+// Türen: Bildkoordinaten -> Bildschirm (background-size: cover, zentriert)
+function renderDoors(bg){
+  const layer = document.getElementById("doors");
+  layer.innerHTML = "";
+  const back = document.getElementById("backBtn");
+  back.style.display = (bg && bg.back) ? "block" : "none";
+  back.onclick = ()=>{ if(bg && bg.back){ state.background = bg.back; saveState(); renderPet(); } };
+  if(!bg || !bg.doors) return;
+  const W = layer.clientWidth, H = layer.clientHeight;
+  const s = Math.max(W/bg.w, H/bg.h);
+  const ox = (W - bg.w*s)/2, oy = (H - bg.h*s)/2;
+  bg.doors.forEach(d=>{
+    const a = document.createElement("div");
+    a.className = "door";
+    a.style.left = (ox + d.x1*s) + "px";
+    a.style.top = (oy + d.y1*s) + "px";
+    a.style.width = ((d.x2-d.x1)*s) + "px";
+    a.style.height = ((d.y2-d.y1)*s) + "px";
+    a.addEventListener("click", ()=>{
+      state.background = d.to;
+      saveState();
+      renderPet();
+    });
+    layer.appendChild(a);
+  });
+}
+window.addEventListener("resize", renderBackground);
+
+function isDayTime(){
+  const h = new Date().getHours();
+  return h >= 7 && h < 20;
+}
+
+function applyDayNight(){
+  const wrap = document.getElementById("petWrap");
+  const icon = document.getElementById("daynight");
+  if(isDayTime()){
+    wrap.classList.remove("sleepy");
+    icon.textContent = "☀️";
+  } else {
+    wrap.classList.add("sleepy");
+    icon.textContent = "🌙";
+  }
+}
+
+/* ---------------- Interaktionen ---------------- */
+function petPet(){
+  const wrap = document.getElementById("petWrap");
+  wrap.classList.remove("bounce"); void wrap.offsetWidth; wrap.classList.add("bounce");
+  popHeart();
+}
+function feedPet(){
+  const wrap = document.getElementById("petWrap");
+  wrap.classList.remove("bounce"); void wrap.offsetWidth; wrap.classList.add("bounce");
+  popHeart("🍪");
+}
+function popHeart(symbol){
+  const h = document.getElementById("heart");
+  h.textContent = symbol || "💕";
+  h.style.opacity = 1;
+  h.style.animation = "none"; void h.offsetWidth;
+  h.style.animation = "floatUp 0.9s ease forwards";
+}
+
+/* ---------------- Panels ---------------- */
+function openPanel(name){
+  document.getElementById("overlay").classList.add("show");
+  document.getElementById("panel-" + name).classList.add("open");
+  if(name === "wardrobe") showWardrobeTab("skins");
+  if(name === "backgrounds") renderBackgroundsGrid();
+}
+function closePanels(){
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("open"));
+  document.getElementById("overlay").classList.remove("show");
+}
+
+let currentWardrobeTab = "skins";
+function makeControls(tile, onRename, onDelete){
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "position:absolute; top:2px; right:2px; display:flex; gap:2px;";
+  const renameBtn = document.createElement("button");
+  renameBtn.className = "tile-delete";
+  renameBtn.title = "Umbenennen";
+  renameBtn.textContent = "✎";
+  renameBtn.onclick = (e)=>{ e.stopPropagation(); onRename(); };
+  const delBtn = document.createElement("button");
+  delBtn.className = "tile-delete";
+  delBtn.title = "Löschen";
+  delBtn.textContent = "✕";
+  delBtn.onclick = (e)=>{ e.stopPropagation(); onDelete(); };
+  wrap.appendChild(renameBtn);
+  wrap.appendChild(delBtn);
+  tile.appendChild(wrap);
+}
+
+function showWardrobeTab(tab){
+  currentWardrobeTab = tab;
+  const grid = document.getElementById("wardrobe-grid");
+  grid.innerHTML = "";
+
+  if(tab === "skins"){
+    Object.entries(state.customSkins).forEach(([id, entry])=>{
+      const tile = document.createElement("div");
+      tile.className = "tile" + (state.skin===id ? " selected":"");
+      tile.style.position = "relative";
+      tile.innerHTML = `<img src="${entry.dataUrl}"><div class="label">${entry.name}</div>`;
+      tile.onclick = ()=>{ state.skin = id; saveState(); renderPet(); showWardrobeTab("skins"); };
+      makeControls(tile,
+        ()=>{
+          const n = prompt("Neuer Name:", entry.name);
+          if(!n) return;
+          entry.name = n; saveState(); renderPet(); showWardrobeTab("skins");
+        },
+        ()=>{
+          if(!confirm(`"${entry.name}" wirklich löschen?`)) return;
+          delete state.customSkins[id];
+          if(state.skin === id) state.skin = null;
+          saveState(); renderPet(); showWardrobeTab("skins");
+        }
+      );
+      grid.appendChild(tile);
+    });
+    const up = document.createElement("div");
+    up.className = "tile upload-tile";
+    up.innerHTML = "➕<div class='label'>Neuer Skin</div>";
+    up.onclick = ()=>{ uploadMode="skin"; document.getElementById("fileInput").click(); };
+    grid.appendChild(up);
+  }
+
+  if(tab === "hats"){
+    // "Kein Hut" ist immer fest vorhanden
+    const noneTile = document.createElement("div");
+    noneTile.className = "tile" + (state.hat==="none" ? " selected":"");
+    noneTile.innerHTML = `🚫<div class="label">Kein Hut</div>`;
+    noneTile.onclick = ()=>{ state.hat="none"; saveState(); renderPet(); showWardrobeTab("hats"); };
+    grid.appendChild(noneTile);
+
+    // eingebaute Hüte (löschbar/umbenennbar über hiddenHats / hatNameOverrides)
+    HATS.filter(h=>h.id!=="none" && !state.hiddenHats.includes(h.id)).forEach(h=>{
+      const label = state.hatNameOverrides[h.id] || h.label;
+      const tile = document.createElement("div");
+      tile.className = "tile" + (state.hat===h.id ? " selected":"");
+      tile.style.position = "relative";
+      const preview = h.art ? hatSVG(HAT_ART[h.art]) : "";
+      tile.innerHTML = `<div style="width:60%;height:60%;">${preview}</div><div class="label">${label}</div>`;
+      tile.onclick = ()=>{ state.hat = h.id; saveState(); renderPet(); showWardrobeTab("hats"); };
+      makeControls(tile,
+        ()=>{
+          const n = prompt("Neuer Name:", label);
+          if(!n) return;
+          state.hatNameOverrides[h.id] = n; saveState(); showWardrobeTab("hats");
+        },
+        ()=>{
+          if(!confirm(`"${label}" wirklich löschen?`)) return;
+          state.hiddenHats.push(h.id);
+          if(state.hat === h.id) state.hat = "none";
+          saveState(); renderPet(); showWardrobeTab("hats");
+        }
+      );
+      grid.appendChild(tile);
+    });
+
+    // eigene hochgeladene Hüte
+    Object.entries(state.customHats).forEach(([id, entry])=>{
+      const tile = document.createElement("div");
+      tile.className = "tile" + (state.hat===id ? " selected":"");
+      tile.style.position = "relative";
+      tile.innerHTML = `<img src="${entry.dataUrl}"><div class="label">${entry.name}</div>`;
+      tile.onclick = ()=>{ state.hat = id; saveState(); renderPet(); showWardrobeTab("hats"); };
+      makeControls(tile,
+        ()=>{
+          const n = prompt("Neuer Name:", entry.name);
+          if(!n) return;
+          entry.name = n; saveState(); showWardrobeTab("hats");
+        },
+        ()=>{
+          if(!confirm(`"${entry.name}" wirklich löschen?`)) return;
+          delete state.customHats[id];
+          if(state.hat === id) state.hat = "none";
+          saveState(); renderPet(); showWardrobeTab("hats");
+        }
+      );
+      grid.appendChild(tile);
+    });
+
+    const up = document.createElement("div");
+    up.className = "tile upload-tile";
+    up.innerHTML = "➕<div class='label'>Neuer Hut</div>";
+    up.onclick = ()=>{ uploadMode="hat"; document.getElementById("fileInput").click(); };
+    grid.appendChild(up);
+  }
+}
+
+function renderBackgroundsGrid(){
+  const grid = document.getElementById("backgrounds-grid");
+  grid.innerHTML = "";
+
+  BACKGROUNDS.filter(b=>!state.hiddenBackgrounds.includes(b.id)).forEach(b=>{
+    const label = state.backgroundNameOverrides[b.id] || b.label;
+    const tile = document.createElement("div");
+    tile.className = "tile" + (state.background===b.id ? " selected":"");
+    tile.style.position = "relative";
+    tile.innerHTML = `${b.emoji}<div class="label">${label}</div>`;
+    tile.onclick = ()=>{ state.background = b.id; saveState(); renderPet(); renderBackgroundsGrid(); };
+    makeControls(tile,
+      ()=>{
+        const n = prompt("Neuer Name:", label);
+        if(!n) return;
+        state.backgroundNameOverrides[b.id] = n; saveState(); renderBackgroundsGrid();
+      },
+      ()=>{
+        if(!confirm(`"${label}" wirklich löschen?`)) return;
+        state.hiddenBackgrounds.push(b.id);
+        if(state.background === b.id) state.background = BACKGROUNDS.find(x=>!state.hiddenBackgrounds.includes(x.id))?.id || null;
+        saveState(); renderPet(); renderBackgroundsGrid();
+      }
+    );
+    grid.appendChild(tile);
+  });
+
+  Object.entries(state.customBackgrounds).forEach(([id, entry])=>{
+    const tile = document.createElement("div");
+    tile.className = "tile" + (state.background===id ? " selected":"");
+    tile.style.position = "relative";
+    tile.innerHTML = `<img src="${entry.dataUrl}"><div class="label">${entry.name}</div>`;
+    tile.onclick = ()=>{ state.background = id; saveState(); renderPet(); renderBackgroundsGrid(); };
+    makeControls(tile,
+      ()=>{
+        const n = prompt("Neuer Name:", entry.name);
+        if(!n) return;
+        entry.name = n; saveState(); renderBackgroundsGrid();
+      },
+      ()=>{
+        if(!confirm(`"${entry.name}" wirklich löschen?`)) return;
+        delete state.customBackgrounds[id];
+        if(state.background === id) state.background = "kitchen";
+        saveState(); renderPet(); renderBackgroundsGrid();
+      }
+    );
+    grid.appendChild(tile);
+  });
+
+  const up = document.createElement("div");
+  up.className = "tile upload-tile";
+  up.innerHTML = "➕<div class='label'>Neuer Hintergrund</div>";
+  up.onclick = ()=>{ uploadMode="background"; document.getElementById("fileInput").click(); };
+  grid.appendChild(up);
+}
+
+/* ---------------- Eigenes Bild hochladen ---------------- */
+document.getElementById("fileInput").addEventListener("change", function(e){
+  const file = e.target.files[0];
+  if(!file || !uploadMode) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const dataUrl = ev.target.result;
+    if(uploadMode === "skin"){
+      const name = prompt("Wie soll der Skin heißen?", "Neuer Skin") || "Skin";
+      const id = "skin_" + Date.now();
+      state.customSkins[id] = { name: name, dataUrl: dataUrl };
+      state.skin = id;
+      saveState(); renderPet(); showWardrobeTab("skins");
+    } else if(uploadMode === "hat"){
+      const name = prompt("Wie soll der Hut heißen?", "Neuer Hut") || "Hut";
+      const id = "hat_" + Date.now();
+      state.customHats[id] = { name: name, dataUrl: dataUrl };
+      state.hat = id;
+      saveState(); renderPet(); showWardrobeTab("hats");
+    } else if(uploadMode === "background"){
+      const name = prompt("Wie soll der Hintergrund heißen?", "Neuer Hintergrund") || "Hintergrund";
+      const id = "bg_" + Date.now();
+      state.customBackgrounds[id] = { name: name, dataUrl: dataUrl };
+      state.background = id;
+      saveState(); renderPet(); renderBackgroundsGrid();
+    }
+    uploadMode = null;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = "";
+});
+
+/* ---------------- Backup ---------------- */
+function deleteAllSkins(){
+  const count = Object.keys(state.customSkins).length;
+  if(count === 0){ alert("Es gibt aktuell keine Skins."); return; }
+  if(!confirm(`Wirklich alle ${count} Skins löschen? Das kann nicht rückgängig gemacht werden.`)) return;
+  state.customSkins = {};
+  state.skin = null;
+  saveState();
+  renderPet();
+  closePanels();
+}
+function exportBackup(){
+  const blob = new Blob([JSON.stringify(state)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "lena-pet-backup.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importBackup(file){
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      state = Object.assign({}, DEFAULT_STATE, JSON.parse(ev.target.result));
+      saveState();
+      renderPet();
+    }catch(err){ alert("Backup-Datei ungültig."); }
+  };
+  reader.readAsText(file);
+}
+
+document.getElementById("backupFileInput").addEventListener("change", function(e){
+  const file = e.target.files[0];
+  if(file) importBackup(file);
+  e.target.value = "";
+});
+
+/* ---------------- Init ---------------- */
+renderPet();
+setInterval(applyDayNight, 60000); // Tag/Nacht jede Minute prüfen
+setInterval(renderBackground, 60000);
+</script>
+</body>
+</html>
